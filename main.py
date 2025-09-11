@@ -2,12 +2,12 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import chromadb
 import traceback
-import requests
 import os
+import httpx  # <-- new import
 
 app = FastAPI()
 
-# CORS (for Streamlit or any frontend)
+# CORS (for frontend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,22 +49,23 @@ Question: {question}
 Answer:
 """
 
-    # Send request to Ollama
+    # Send request to Ollama asynchronously
     try:
-        ollama_response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": "llama3:latest",   # ✅ Updated model name
-                "prompt": prompt,
-                "stream": False
-            }
-        )
-        ollama_response.raise_for_status()
-        answer = ollama_response.json()["response"].strip()
+        async with httpx.AsyncClient() as client:
+            ollama_response = await client.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={
+                    "model": "llama3:latest",
+                    "prompt": prompt,
+                    "stream": False,
+                },
+                timeout=30.0  # optional timeout
+            )
+            ollama_response.raise_for_status()
+            answer = ollama_response.json().get("response", "").strip()
 
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ollama error: {str(e)}")
 
     return {"answer": answer}
-
