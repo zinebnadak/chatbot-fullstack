@@ -7,7 +7,7 @@ import os
 
 app = FastAPI()
 
-# CORS (for future frontend use)
+# CORS (for Streamlit or any frontend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,29 +16,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Init ChromaDB
+# Initialize ChromaDB collection
 chroma_client = chromadb.Client()
 collection = chroma_client.get_or_create_collection(name="business-faqs")
 
-# ENV variable for Ollama
+# ENV variable for remote/local Ollama server
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-
 
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Backend is running"}
 
-
 @app.post("/ask")
 async def ask(request: Request):
     data = await request.json()
     question = data.get("question")
+
     if not question:
         return {"error": "Missing question"}
 
+    # Query vector DB for context
     results = collection.query(query_texts=[question], n_results=3)
     relevant_docs = "\n".join(results["documents"][0]) if results["documents"] else ""
 
+    # Build the prompt
     prompt = f"""
 You are a helpful business assistant.
 Use the following context to answer the question:
@@ -48,11 +49,12 @@ Question: {question}
 Answer:
 """
 
+    # Send request to Ollama
     try:
         ollama_response = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={
-                "model": "qwen:7b",
+                "model": "llama3:latest",   # ✅ Updated model name
                 "prompt": prompt,
                 "stream": False
             }
@@ -65,3 +67,4 @@ Answer:
         raise HTTPException(status_code=500, detail=f"Ollama error: {str(e)}")
 
     return {"answer": answer}
+
