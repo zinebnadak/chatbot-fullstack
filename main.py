@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import chromadb
 import traceback
 import os
-import httpx  # <-- keep this for async HTTP requests
+import httpx
+import openai
 import json
 
 from dotenv import load_dotenv
@@ -29,9 +30,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise Exception("Missing OPENAI_API_KEY environment variable")
 
-openai.api_key = OPENAI_API_KEY
-
-OPENAI_API_URL = "https://api.openai.com/v1/completions"  # Using completion endpoint for text-davinci-003
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"  # <-- Updated URL for chat completions
 
 @app.get("/")
 def root():
@@ -65,13 +64,13 @@ Answer:
     }
 
     payload = {
-        "model": "text-davinci-003",
-        "prompt": prompt,
+        "model": "gpt-3.5-turbo",  # Use chat model
+        "messages": [
+            {"role": "system", "content": "You are a helpful business assistant."},
+            {"role": "user", "content": prompt},
+        ],
         "max_tokens": 300,
         "temperature": 0.7,
-        "top_p": 1,
-        "n": 1,
-        "stop": None,
     }
 
     # Send request to OpenAI asynchronously
@@ -80,7 +79,7 @@ Answer:
             response = await client.post(OPENAI_API_URL, headers=headers, json=payload, timeout=30.0)
             response.raise_for_status()
             response_json = response.json()
-            answer = response_json["choices"][0]["text"].strip()
+            answer = response_json["choices"][0]["message"]["content"].strip()
 
     except Exception as e:
         traceback.print_exc()
