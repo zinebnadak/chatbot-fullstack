@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import chromadb
 import traceback
 import os
-import httpx  # <-- new import
+import httpx  # <-- keep this for async HTTP requests
+import json
+
+from dotenv import load_dotenv
+load_dotenv()  # This loads environment variables from the .env file
 
 app = FastAPI()
 
@@ -20,8 +24,14 @@ app.add_middleware(
 chroma_client = chromadb.Client()
 collection = chroma_client.get_or_create_collection(name="business-faqs")
 
-# ENV variable for remote/local Ollama server
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+# OpenAI API key from environment variable
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise Exception("Missing OPENAI_API_KEY environment variable")
+
+openai.api_key = OPENAI_API_KEY
+
+OPENAI_API_URL = "https://api.openai.com/v1/completions"  # Using completion endpoint for text-davinci-003
 
 @app.get("/")
 def root():
@@ -49,23 +59,32 @@ Question: {question}
 Answer:
 """
 
-    # Send request to Ollama asynchronously
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": "text-davinci-003",
+        "prompt": prompt,
+        "max_tokens": 300,
+        "temperature": 0.7,
+        "top_p": 1,
+        "n": 1,
+        "stop": None,
+    }
+
+    # Send request to OpenAI asynchronously
     try:
         async with httpx.AsyncClient() as client:
-            ollama_response = await client.post(
-                f"{OLLAMA_URL}/api/generate",
-                json={
-                    "model": "llama3:latest",
-                    "prompt": prompt,
-                    "stream": False,
-                },
-                timeout=30.0  # optional timeout
-            )
-            ollama_response.raise_for_status()
-            answer = ollama_response.json().get("response", "").strip()
+            response = await client.post(OPENAI_API_URL, headers=headers, json=payload, timeout=30.0)
+            response.raise_for_status()
+            response_json = response.json()
+            answer = response_json["choices"][0]["text"].strip()
 
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Ollama error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
     return {"answer": answer}
+
