@@ -30,7 +30,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise Exception("Missing OPENAI_API_KEY environment variable")
 
-OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"  # <-- Updated URL for chat completions
+OPENAI_API_URL = OPENAI_API_URL = "https://openrouter.ai/api/v1/chat/completions"  # <-- Updated URL for chat completions
 
 @app.get("/")
 def root():
@@ -62,8 +62,9 @@ Answer:
 """
 
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",  # use your OpenRouter key
+        "HTTP-Referer": "https://nadak-s-ai-chatbot.onrender.com",  # required by Openrouter
+        "Content-Type": "application/json"
     }
 
     payload = {
