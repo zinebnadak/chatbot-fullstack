@@ -4,7 +4,6 @@ import chromadb
 import traceback
 import os
 import httpx
-import openai
 import json
 
 from dotenv import load_dotenv
@@ -25,12 +24,12 @@ app.add_middleware(
 chroma_client = chromadb.Client()
 collection = chroma_client.get_or_create_collection(name="business-faqs")
 
-# OpenAI API key from environment variable
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise Exception("Missing OPENAI_API_KEY environment variable")
+# OpenRouter API key from environment variable
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+if not OPENROUTER_API_KEY:
+    raise Exception("Missing OPENROUTER_API_KEY environment variable")
 
-OPENAI_API_URL = OPENAI_API_URL = "https://openrouter.ai/api/v1/chat/completions"  # <-- Updated URL for chat completions
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"  # OpenRouter endpoint
 
 @app.get("/")
 def root():
@@ -62,15 +61,15 @@ Answer:
 """
 
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",  # use your OpenRouter key
-        "Referer": "https://nadak-s-ai-chatbot.onrender.com",  # required by Openrouter
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Referer": "https://nadak-s-ai-chatbot.onrender.com",  # Your deployed URL here
         "Content-Type": "application/json"
     }
 
     model = os.environ.get("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct")
 
     payload = {
-        "model": model,        # ✅ (Free)
+        "model": model,
         "messages": [
             {"role": "system", "content": "You are a helpful business assistant."},
             {"role": "user", "content": prompt},
@@ -79,19 +78,18 @@ Answer:
         "temperature": 0.7,
     }
 
-    # Send request to OpenAI asynchronously
     try:
-        print("[LOG] Calling OpenAI API...")
+        print("[LOG] Calling OpenRouter API...")
         async with httpx.AsyncClient() as client:
-            response = await client.post(OPENAI_API_URL, headers=headers, json=payload, timeout=30.0)
-            print(f"[LOG] OpenAI API response status: {response.status_code}")
+            response = await client.post(OPENROUTER_API_URL, headers=headers, json=payload, timeout=30.0)
+            print(f"[LOG] OpenRouter API response status: {response.status_code}")
             response.raise_for_status()
             response_json = response.json()
             answer = response_json["choices"][0]["message"]["content"].strip()
-            print(f"[LOG] OpenAI answer: {answer}")
+            print(f"[LOG] OpenRouter answer: {answer}")
 
     except Exception as e:
-        print(f"[ERROR] OpenAI API call failed: {e}")
+        print(f"[ERROR] OpenRouter API call failed: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
