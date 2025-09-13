@@ -63,10 +63,10 @@ Answer:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Referer": "https://nadak-s-ai-chatbot.onrender.com",  # Your deployed URL here
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
-    model = os.environ.get("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct")
+    model = os.environ.get("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct:free")
 
     payload = {
         "model": model,
