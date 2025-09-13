@@ -63,12 +63,14 @@ Answer:
 
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",  # use your OpenRouter key
-        "HTTP-Referer": "https://nadak-s-ai-chatbot.onrender.com",  # required by Openrouter
+        "Referer": "https://nadak-s-ai-chatbot.onrender.com",  # required by Openrouter
         "Content-Type": "application/json"
     }
 
+    model = os.environ.get("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct")
+
     payload = {
-        "model": "gpt-3.5-turbo",  # Use chat model
+        "model": model,        # ✅ (Free)
         "messages": [
             {"role": "system", "content": "You are a helpful business assistant."},
             {"role": "user", "content": prompt},
