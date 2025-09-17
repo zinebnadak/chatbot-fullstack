@@ -39,4 +39,4 @@ if st.button("Send") and question:
         st.session_state.messages.append({"role": "bot", "content": answer})
 
         # Rerun to update chat display
-        st.experimental_rerun()
+        st.rerun()
