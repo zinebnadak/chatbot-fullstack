@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+from streamlit_chat import message  # new import
 
 st.set_page_config(page_title="Business Chatbot")
 
@@ -9,9 +10,12 @@ st.title("💬 Business Chatbot")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history
+# Display chat history with streamlit-chat message bubbles
 for msg in st.session_state.messages:
-    st.markdown(f"**{msg['role'].capitalize()}:** {msg['content']}")
+    if msg["role"] == "user":
+        message(msg["content"], is_user=True)
+    else:
+        message(msg["content"])
 
 # Input box
 question = st.text_input("Ask a question:")
@@ -40,3 +44,4 @@ if st.button("Send") and question:
 
         # Rerun to update chat display
         st.rerun()
+
