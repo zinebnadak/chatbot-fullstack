@@ -5,6 +5,7 @@ import traceback
 import os
 import httpx
 import json
+import re  # ← Added for cleaning up <s> tokens
 
 from dotenv import load_dotenv
 load_dotenv()  # This loads environment variables from the .env file
@@ -85,8 +86,12 @@ Answer:
             print(f"[LOG] OpenRouter API response status: {response.status_code}")
             response.raise_for_status()
             response_json = response.json()
-            answer = response_json["choices"][0]["message"]["content"].strip()
-            print(f"[LOG] OpenRouter answer: {answer}")
+
+            # Clean unwanted tokens like <s> or </s>
+            raw_answer = response_json["choices"][0]["message"]["content"].strip()
+            cleaned_answer = re.sub(r"<\/?s>", "", raw_answer)
+            answer = cleaned_answer
+            print(f"[LOG] Cleaned OpenRouter answer: {answer}")
 
     except Exception as e:
         print(f"[ERROR] OpenRouter API call failed: {e}")
@@ -94,3 +99,4 @@ Answer:
         raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
     return {"answer": answer}
+
