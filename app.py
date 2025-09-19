@@ -1,83 +1,380 @@
-import streamlit as st
-import requests
-from streamlit_chat import message  # Chat bubble component
+{
+  "name": "family-chatbot",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^3.1.0",
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.3.2",
+    "vite": "^4.3.9"
+  }
+}
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-# 🧠 Page config.
-st.set_page_config(page_title="💬 Business Chatbot", layout="centered")
+export default defineConfig({
+  plugins: [react()]
+});
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class', // enable class-based dark mode
+  theme: {
+    extend: {}
+  },
+  plugins: []
+};
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>💬 Family Chatbot</title>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-# 💬 Page title
-st.markdown("<h1 style='text-align: center;'>💬 Business Chatbot</h1>", unsafe_allow_html=True)
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-# 💅 Custom CSS for cleaner chat layout (inspired by Hugging Face)
-st.markdown("""
-    <style>
-        /* Reduce padding around message bubbles */
-        .stChatMessage {
-            padding: 0.25rem 1rem;
-        }
+/* Custom scrollbar for chat window */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #a0aec0; /* Tailwind gray-400 */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 
-        /* Tweak font size and make bubble edges smoother */
-        .stChatMessageContent {
-            font-size: 1rem;
-            border-radius: 0.75rem !important;
-        }
+const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';
 
-        /* Center the input box and send button */
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
+function ChatMessage({ message }) {
+  const isUser = message.role === 'user';
 
-        /* Optional: Light background for app */
-        body {
-            background-color: #FAFAFA;
-        }
+  return (
+    <div
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 py-1`}
+    >
+      <div
+        className={`
+          max-w-xs md:max-w-lg px-4 py-3
+          rounded-xl
+          whitespace-pre-wrap
+          ${isUser
+            ? 'bg-blue-100 text-gray-900 dark:bg-blue-600 dark:text-white'
+            : 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100'}
+        `}
+      >
+        {message.content}
+      </div>
+    </div>
+  );
+}
 
-        /* Make bot/user distinction clearer */
-        .stChatMessage.user {
-            background-color: #DCF8C6 !important;
-        }
+function DarkModeToggle({ darkMode, setDarkMode }) {
+  return (
+    <button
+      onClick={() => setDarkMode(!darkMode)}
+      className="fixed top-4 right-4 bg-gray-300 dark:bg-gray-700 p-2 rounded-full focus:outline-none"
+      aria-label="Toggle dark mode"
+    >
+      {darkMode ? '🌙' : '☀️'}
+    </button>
+  );
+}
 
-        .stChatMessage.bot {
-            background-color: #F1F0F0 !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
+export default function App() {
+  const [messages, setMessages] = useState(() => {
+    // Load saved messages from localStorage
+    const saved = localStorage.getItem('chat_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dark_mode');
+    return saved ? JSON.parse(saved) : false;
+  });
 
-# 📦 Store chat history in session state
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+  const messagesEndRef = useRef(null);
 
-# 💬 Render message history
-for msg in st.session_state.messages:
-    message(msg["content"], is_user=(msg["role"] == "user"))
+  // Scroll to bottom on new message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-# 📝 Input field
-question = st.text_input("Ask a question:", placeholder="Type your message here...")
+  // Save messages to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('chat_messages', JSON.stringify(messages));
+  }, [messages]);
 
-# 🚀 Send button
-if st.button("Send") and question:
-    # Add user message
-    st.session_state.messages.append({"role": "user", "content": question})
+  // Save dark mode preference
+  useEffect(() => {
+    localStorage.setItem('dark_mode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
-    # Talk to backend
-    with st.spinner("Getting answer..."):
-        try:
-            response = requests.post(
-                "https://nadak-s-ai-chatbot.onrender.com/ask",
-                json={"question": question},
-                timeout=30
-            )
-            response.raise_for_status()
-            answer = response.json().get("answer", "No answer found.")
-        except Exception as e:
-            answer = f"⚠️ Error: {str(e)}"
-            st.error(answer)
+  async function sendMessage() {
+    if (!input.trim()) return;
+    const userMessage = { role: 'user', content: input.trim() };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setLoading(true);
 
-        # Add bot response
-        st.session_state.messages.append({"role": "bot", "content": answer})
+    try {
+      const response = await axios.post(BACKEND_URL, { question: userMessage.content });
+      const botMessage = { role: 'bot', content: response.data.answer || 'No answer found.' };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      const errorMessage = `⚠️ Error: ${error.message || 'Network error'}`;
+      setMessages((prev) => [...prev, { role: 'bot', content: errorMessage }]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-        # Rerun to update UI
-        st.rerun()
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
 
+  return (
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+      <header className="py-4 shadow-md bg-white dark:bg-gray-800 text-center text-xl font-semibold text-gray-900 dark:text-gray-100">
+        💬 Family Chatbot
+      </header>
 
+      <main className="flex-grow overflow-y-auto p-4 space-y-2">
+        {messages.length === 0 && (
+          <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
+            Ask me anything!
+          </p>
+        )}
+
+        {messages.map((msg, idx) => (
+          <ChatMessage key={idx} message={msg} />
+        ))}
+        <div ref={messagesEndRef} />
+      </main>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendMessage();
+        }}
+        className="bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner"
+      >
+        <textarea
+          rows={1}
+          className="flex-grow resize-none rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Type your message here..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={loading || !input.trim()}
+          className={`px-4 py-2 rounded-md text-white ${
+            loading || !input.trim() ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {loading ? 'Sending...' : 'Send'}
+        </button>
+      </form>
+    </div>
+  );
+}
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+
+const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';
+
+function ChatMessage({ message }) {
+  const isUser = message.role === 'user';
+
+  return (
+    <div
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 py-1`}
+    >
+      <div
+        className={`
+          max-w-xs md:max-w-lg px-4 py-3
+          rounded-xl
+          whitespace-pre-wrap
+          ${isUser
+            ? 'bg-blue-100 text-gray-900 dark:bg-blue-600 dark:text-white'
+            : 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100'}
+        `}
+      >
+        {message.content}
+      </div>
+    </div>
+  );
+}
+
+function DarkModeToggle({ darkMode, setDarkMode }) {
+  return (
+    <button
+      onClick={() => setDarkMode(!darkMode)}
+      className="fixed top-4 right-4 bg-gray-300 dark:bg-gray-700 p-2 rounded-full focus:outline-none"
+      aria-label="Toggle dark mode"
+    >
+      {darkMode ? '🌙' : '☀️'}
+    </button>
+  );
+}
+
+export default function App() {
+  const [messages, setMessages] = useState(() => {
+    // Load saved messages from localStorage
+    const saved = localStorage.getItem('chat_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dark_mode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  const messagesEndRef = useRef(null);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Save messages to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('chat_messages', JSON.stringify(messages));
+  }, [messages]);
+
+  // Save dark mode preference
+  useEffect(() => {
+    localStorage.setItem('dark_mode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  async function sendMessage() {
+    if (!input.trim()) return;
+    const userMessage = { role: 'user', content: input.trim() };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const response = await axios.post(BACKEND_URL, { question: userMessage.content });
+      const botMessage = { role: 'bot', content: response.data.answer || 'No answer found.' };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      const errorMessage = `⚠️ Error: ${error.message || 'Network error'}`;
+      setMessages((prev) => [...prev, { role: 'bot', content: errorMessage }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+      <header className="py-4 shadow-md bg-white dark:bg-gray-800 text-center text-xl font-semibold text-gray-900 dark:text-gray-100">
+        💬 Family Chatbot
+      </header>
+
+      <main className="flex-grow overflow-y-auto p-4 space-y-2">
+        {messages.length === 0 && (
+          <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
+            Ask me anything!
+          </p>
+        )}
+
+        {messages.map((msg, idx) => (
+          <ChatMessage key={idx} message={msg} />
+        ))}
+        <div ref={messagesEndRef} />
+      </main>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendMessage();
+        }}
+        className="bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner"
+      >
+        <textarea
+          rows={1}
+          className="flex-grow resize-none rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Type your message here..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={loading || !input.trim()}
+          className={`px-4 py-2 rounded-md text-white ${
+            loading || !input.trim() ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {loading ? 'Sending...' : 'Send'}
+        </button>
+      </form>
+    </div>
+  );
+}
