@@ -37,10 +37,12 @@ function DarkModeToggle({ darkMode, setDarkMode }) {
 }
 
 export default function App() {
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem('chat_messages');
-    return saved ? JSON.parse(saved) : [];
-  });
+  useEffect(() => {
+  localStorage.removeItem('chat_messages'); // clear saved messages
+}, []);
+
+const [messages, setMessages] = useState([]);
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
