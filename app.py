@@ -1,31 +1,66 @@
 import streamlit as st
 import requests
-from streamlit_chat import message  # new import
+from streamlit_chat import message  # Chat bubble component
 
-st.set_page_config(page_title="Business Chatbot")
+# 🧠 Page config
+st.set_page_config(page_title="💬 Business Chatbot", layout="centered")
 
-st.title("💬 Business Chatbot")
+# 💬 Page title
+st.markdown("<h1 style='text-align: center;'>💬 Business Chatbot</h1>", unsafe_allow_html=True)
 
-# Session state to store chat history
+# 💅 Custom CSS for cleaner chat layout (inspired by Hugging Face)
+st.markdown("""
+    <style>
+        /* Reduce padding around message bubbles */
+        .stChatMessage {
+            padding: 0.25rem 1rem;
+        }
+
+        /* Tweak font size and make bubble edges smoother */
+        .stChatMessageContent {
+            font-size: 1rem;
+            border-radius: 0.75rem !important;
+        }
+
+        /* Center the input box and send button */
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        /* Optional: Light background for app */
+        body {
+            background-color: #FAFAFA;
+        }
+
+        /* Make bot/user distinction clearer */
+        .stChatMessage.user {
+            background-color: #DCF8C6 !important;
+        }
+
+        .stChatMessage.bot {
+            background-color: #F1F0F0 !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# 📦 Store chat history in session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history with streamlit-chat message bubbles
+# 💬 Render message history
 for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        message(msg["content"], is_user=True)
-    else:
-        message(msg["content"])
+    message(msg["content"], is_user=(msg["role"] == "user"))
 
-# Input box
-question = st.text_input("Ask a question:")
+# 📝 Input field
+question = st.text_input("Ask a question:", placeholder="Type your message here...")
 
-# On send
+# 🚀 Send button
 if st.button("Send") and question:
-    # Add user message to history
+    # Add user message
     st.session_state.messages.append({"role": "user", "content": question})
 
-    # Call backend
+    # Talk to backend
     with st.spinner("Getting answer..."):
         try:
             response = requests.post(
@@ -39,9 +74,10 @@ if st.button("Send") and question:
             answer = f"⚠️ Error: {str(e)}"
             st.error(answer)
 
-        # Add assistant message to history
+        # Add bot response
         st.session_state.messages.append({"role": "bot", "content": answer})
 
-        # Rerun to update chat display
+        # Rerun to update UI
         st.rerun()
+
 
