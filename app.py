@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from streamlit_chat import message  # Chat bubble component
 
-# 🧠 Page config
+# 🧠 Page config.
 st.set_page_config(page_title="💬 Business Chatbot", layout="centered")
 
 # 💬 Page title
