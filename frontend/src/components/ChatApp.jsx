@@ -1,11 +1,12 @@
+// ChatApp.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
-const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';  // Your backend API URL
+const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';
 
 function ChatMessage({ message }) {
   const isUser = message.role === 'user';
-
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 py-1`}>
       <div
@@ -24,6 +25,16 @@ function ChatMessage({ message }) {
   );
 }
 
+function TypingBubble() {
+  return (
+    <div className="flex justify-start px-4 py-1">
+      <div className="px-4 py-3 rounded-xl bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-gray-100 max-w-xs">
+        <span className="animate-pulse">Typing...</span>
+      </div>
+    </div>
+  );
+}
+
 function DarkModeToggle({ darkMode, setDarkMode }) {
   return (
     <button
@@ -36,13 +47,8 @@ function DarkModeToggle({ darkMode, setDarkMode }) {
   );
 }
 
-export default function App() {
-  useEffect(() => {
-  localStorage.removeItem('chat_messages'); // clear saved messages
-}, []);
-
-const [messages, setMessages] = useState([]);
-
+export default function ChatApp() {
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -57,10 +63,6 @@ const [messages, setMessages] = useState([]);
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem('chat_messages', JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
     localStorage.setItem('dark_mode', JSON.stringify(darkMode));
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -69,50 +71,91 @@ const [messages, setMessages] = useState([]);
     }
   }, [darkMode]);
 
-  async function sendMessage() {
+  const sendMessage = async () => {
     if (!input.trim()) return;
+
     const userMessage = { role: 'user', content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
     try {
-      const response = await axios.post(BACKEND_URL, { question: userMessage.content });
-      const botMessage = { role: 'bot', content: response.data.answer || 'No answer found.' };
+      const response = await axios.post(BACKEND_URL, {
+        question: userMessage.content,
+      });
+
+      const fullText = response.data.answer || 'No answer found.';
+      const botMessage = { role: 'bot', content: '' };
+
       setMessages((prev) => [...prev, botMessage]);
+
+      // Typing effect
+      let index = 0;
+      const typingInterval = setInterval(() => {
+        if (index < fullText.length) {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastMsg = updated[updated.length - 1];
+            updated[updated.length - 1] = {
+              ...lastMsg,
+              content: lastMsg.content + fullText.charAt(index),
+            };
+            return updated;
+          });
+          index++;
+        } else {
+          clearInterval(typingInterval);
+          setLoading(false);
+        }
+      }, 20);
     } catch (error) {
-      const errorMessage = `⚠️ Error: ${error.message || 'Network error'}`;
-      setMessages((prev) => [...prev, { role: 'bot', content: errorMessage }]);
-    } finally {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'bot',
+          content: `⚠️ Error: ${error.message || 'Network error'}`,
+        },
+      ]);
       setLoading(false);
     }
-  }
+  };
 
-  function handleKeyDown(e) {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  }
+  };
+
+  const isEmpty = messages.length === 0;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+
       <header className="py-4 shadow-md bg-white dark:bg-gray-800 text-center text-xl font-semibold text-gray-900 dark:text-gray-100">
         💬 Family Chatbot
       </header>
 
-      <main className="flex-grow overflow-y-auto p-4 space-y-2">
-        {messages.length === 0 && (
-          <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
-            Ask me anything!
-          </p>
-        )}
+      <main
+        className={`flex-grow overflow-y-auto px-4 py-6 transition-all duration-300 ${
+          isEmpty ? 'flex items-center justify-center' : ''
+        }`}
+      >
+        <div className="w-full max-w-2xl mx-auto space-y-2">
+          {isEmpty && (
+            <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
+              Start the conversation below.
+            </p>
+          )}
 
-        {messages.map((msg, idx) => (
-          <ChatMessage key={idx} message={msg} />
-        ))}
-        <div ref={messagesEndRef} />
+          {messages.map((msg, idx) => (
+            <ChatMessage key={idx} message={msg} />
+          ))}
+
+          {loading && <TypingBubble />}
+          <div ref={messagesEndRef} />
+        </div>
       </main>
 
       <form
@@ -120,7 +163,9 @@ const [messages, setMessages] = useState([]);
           e.preventDefault();
           sendMessage();
         }}
-        className="bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner"
+        className={`bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner transition-all duration-300 ${
+          isEmpty ? 'justify-center' : ''
+        }`}
       >
         <textarea
           rows={1}
@@ -135,7 +180,9 @@ const [messages, setMessages] = useState([]);
           type="submit"
           disabled={loading || !input.trim()}
           className={`px-4 py-2 rounded-md text-white ${
-            loading || !input.trim() ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            loading || !input.trim()
+              ? 'bg-blue-300 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
           {loading ? 'Sending...' : 'Send'}
