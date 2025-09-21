@@ -84,21 +84,22 @@ export default function ChatApp() {
       });
 
       const fullText = response.data.answer || 'No answer found.';
-      const botMessage = { role: 'bot', content: '' };
+      console.log('🧠 BOT RESPONSE:', fullText); // Debug log
 
-      setMessages((prev) => [...prev, botMessage]);
+      // Add placeholder for bot message
+      setMessages((prev) => [...prev, { role: 'bot', content: '' }]);
 
       // Typing effect
       let index = 0;
       const typingInterval = setInterval(() => {
         setMessages((prev) => {
           const updated = [...prev];
-          const last = updated[updated.length - 1];
+          const lastMessage = updated[updated.length - 1];
 
           if (index < fullText.length) {
             updated[updated.length - 1] = {
-              ...last,
-              content: last.content + fullText.charAt(index),
+              ...lastMessage,
+              content: lastMessage.content + fullText.charAt(index),
             };
             index++;
           } else {
