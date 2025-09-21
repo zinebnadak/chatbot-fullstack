@@ -70,11 +70,10 @@ Answer:
     model = os.environ.get("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct:free")
 
     payload = {
+        "model": model,
         "messages": [
             {"role": "system", "content": "You are a helpful business assistant."},
-            {"role": "user", "content": question},
-            {"role": "assistant",
-             "content": f"Use the following context to answer the user's question:\n{relevant_docs}"},
+            {"role": "user", "content": prompt},
         ],
         "max_tokens": 300,
         "temperature": 0.7,
@@ -89,13 +88,7 @@ Answer:
             response_json = response.json()
 
             # Clean unwanted tokens like <s> or </s>
-            # === START OF SAFETY CHECK ===
-            try:
-                raw_answer = response_json["choices"][0]["message"]["content"].strip()
-            except (KeyError, IndexError, TypeError) as e:
-                print(f"[ERROR] Unexpected response format: {json.dumps(response_json, indent=2)}")
-                raise HTTPException(status_code=500, detail="Malformed OpenRouter response.")
-            # === END OF SAFETY CHECK ===
+            raw_answer = response_json["choices"][0]["message"]["content"].strip()
             cleaned_answer = re.sub(r"<\/?s>", "", raw_answer)
             answer = cleaned_answer
             print(f"[LOG] Cleaned OpenRouter answer: {answer}")
@@ -106,4 +99,5 @@ Answer:
         raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
     return {"answer": answer}
+
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
-const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';
+const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';  // Your backend API URL
 
 function ChatMessage({ message }) {
   const isUser = message.role === 'user';
@@ -24,16 +24,6 @@ function ChatMessage({ message }) {
   );
 }
 
-function TypingBubble() {
-  return (
-    <div className="flex justify-start px-4 py-1">
-      <div className="px-4 py-3 rounded-xl bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-gray-100 max-w-xs">
-        <span className="animate-pulse">Typing...</span>
-      </div>
-    </div>
-  );
-}
-
 function DarkModeToggle({ darkMode, setDarkMode }) {
   return (
     <button
@@ -46,8 +36,13 @@ function DarkModeToggle({ darkMode, setDarkMode }) {
   );
 }
 
-export default function ChatApp() {
-  const [messages, setMessages] = useState([]);
+export default function App() {
+  useEffect(() => {
+  localStorage.removeItem('chat_messages'); // clear saved messages
+}, []);
+
+const [messages, setMessages] = useState([]);
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -62,6 +57,10 @@ export default function ChatApp() {
   }, [messages]);
 
   useEffect(() => {
+    localStorage.setItem('chat_messages', JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
     localStorage.setItem('dark_mode', JSON.stringify(darkMode));
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -70,95 +69,50 @@ export default function ChatApp() {
     }
   }, [darkMode]);
 
-  const sendMessage = async () => {
+  async function sendMessage() {
     if (!input.trim()) return;
-
     const userMessage = { role: 'user', content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
     try {
-      const response = await axios.post(BACKEND_URL, {
-        question: userMessage.content,
-      });
-
-      const fullText = response.data.answer || 'No answer found.';
-      console.log('🧠 BOT RESPONSE:', fullText); // Debug log
-
-      // Add placeholder for bot message
-      setMessages((prev) => [...prev, { role: 'bot', content: '' }]);
-
-      // Typing effect
-      let index = 0;
-      const typingInterval = setInterval(() => {
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastMessage = updated[updated.length - 1];
-
-          if (index < fullText.length) {
-            updated[updated.length - 1] = {
-              ...lastMessage,
-              content: lastMessage.content + fullText.charAt(index),
-            };
-            index++;
-          } else {
-            clearInterval(typingInterval);
-            setLoading(false);
-          }
-
-          return updated;
-        });
-      }, 20);
+      const response = await axios.post(BACKEND_URL, { question: userMessage.content });
+      const botMessage = { role: 'bot', content: response.data.answer || 'No answer found.' };
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'bot',
-          content: `⚠️ Error: ${error.message || 'Network error'}`,
-        },
-      ]);
+      const errorMessage = `⚠️ Error: ${error.message || 'Network error'}`;
+      setMessages((prev) => [...prev, { role: 'bot', content: errorMessage }]);
+    } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleKeyDown = (e) => {
+  function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
-
-  const isEmpty = messages.length === 0;
+  }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 relative">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
-
       <header className="py-4 shadow-md bg-white dark:bg-gray-800 text-center text-xl font-semibold text-gray-900 dark:text-gray-100">
         💬 Family Chatbot
       </header>
 
-      <main
-        className={`flex-grow overflow-y-auto transition-all duration-300 ${
-          isEmpty ? 'flex items-center justify-center' : 'px-4 py-6'
-        }`}
-      >
-        <div className="w-full max-w-2xl mx-auto space-y-2">
-          {isEmpty ? (
-            <p className="text-center text-gray-500 dark:text-gray-400">
-              Start the conversation below.
-            </p>
-          ) : (
-            <>
-              {messages.map((msg, idx) => (
-                <ChatMessage key={idx} message={msg} />
-              ))}
-              {loading && <TypingBubble />}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
+      <main className="flex-grow overflow-y-auto p-4 space-y-2">
+        {messages.length === 0 && (
+          <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
+            Ask me anything!
+          </p>
+        )}
+
+        {messages.map((msg, idx) => (
+          <ChatMessage key={idx} message={msg} />
+        ))}
+        <div ref={messagesEndRef} />
       </main>
 
       <form
@@ -166,11 +120,7 @@ export default function ChatApp() {
           e.preventDefault();
           sendMessage();
         }}
-        className={`bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner transition-all duration-300 ${
-          isEmpty
-            ? 'absolute bottom-1/2 translate-y-1/2 left-1/2 -translate-x-1/2 w-full max-w-xl'
-            : ''
-        }`}
+        className="bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner"
       >
         <textarea
           rows={1}
@@ -185,9 +135,7 @@ export default function ChatApp() {
           type="submit"
           disabled={loading || !input.trim()}
           className={`px-4 py-2 rounded-md text-white ${
-            loading || !input.trim()
-              ? 'bg-blue-300 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
+            loading || !input.trim() ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
           {loading ? 'Sending...' : 'Send'}
