@@ -1,5 +1,3 @@
-// ChatApp.jsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
@@ -7,6 +5,7 @@ const BACKEND_URL = 'https://nadak-s-ai-chatbot.onrender.com/ask';
 
 function ChatMessage({ message }) {
   const isUser = message.role === 'user';
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 py-1`}>
       <div
@@ -92,21 +91,23 @@ export default function ChatApp() {
       // Typing effect
       let index = 0;
       const typingInterval = setInterval(() => {
-        if (index < fullText.length) {
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastMsg = updated[updated.length - 1];
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+
+          if (index < fullText.length) {
             updated[updated.length - 1] = {
-              ...lastMsg,
-              content: lastMsg.content + fullText.charAt(index),
+              ...last,
+              content: last.content + fullText.charAt(index),
             };
-            return updated;
-          });
-          index++;
-        } else {
-          clearInterval(typingInterval);
-          setLoading(false);
-        }
+            index++;
+          } else {
+            clearInterval(typingInterval);
+            setLoading(false);
+          }
+
+          return updated;
+        });
       }, 20);
     } catch (error) {
       setMessages((prev) => [
@@ -130,7 +131,7 @@ export default function ChatApp() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 relative">
       <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
 
       <header className="py-4 shadow-md bg-white dark:bg-gray-800 text-center text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -138,23 +139,24 @@ export default function ChatApp() {
       </header>
 
       <main
-        className={`flex-grow overflow-y-auto px-4 py-6 transition-all duration-300 ${
-          isEmpty ? 'flex items-center justify-center' : ''
+        className={`flex-grow overflow-y-auto transition-all duration-300 ${
+          isEmpty ? 'flex items-center justify-center' : 'px-4 py-6'
         }`}
       >
         <div className="w-full max-w-2xl mx-auto space-y-2">
-          {isEmpty && (
-            <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
+          {isEmpty ? (
+            <p className="text-center text-gray-500 dark:text-gray-400">
               Start the conversation below.
             </p>
+          ) : (
+            <>
+              {messages.map((msg, idx) => (
+                <ChatMessage key={idx} message={msg} />
+              ))}
+              {loading && <TypingBubble />}
+              <div ref={messagesEndRef} />
+            </>
           )}
-
-          {messages.map((msg, idx) => (
-            <ChatMessage key={idx} message={msg} />
-          ))}
-
-          {loading && <TypingBubble />}
-          <div ref={messagesEndRef} />
         </div>
       </main>
 
@@ -164,7 +166,9 @@ export default function ChatApp() {
           sendMessage();
         }}
         className={`bg-white dark:bg-gray-800 p-4 flex items-center gap-2 shadow-inner transition-all duration-300 ${
-          isEmpty ? 'justify-center' : ''
+          isEmpty
+            ? 'absolute bottom-1/2 translate-y-1/2 left-1/2 -translate-x-1/2 w-full max-w-xl'
+            : ''
         }`}
       >
         <textarea
