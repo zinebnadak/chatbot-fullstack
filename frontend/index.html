@@ -1,12 +1,36 @@
 <!DOCTYPE html>
+<!-- Declares the document type and version of HTML (HTML5 here) -->
+
 <html lang="en" class="scroll-smooth">
+  <!-- Root element of the HTML document -->
+  <!-- 'lang="en"' sets the language to English for accessibility and SEO -->
+  <!-- 'class="scroll-smooth"' applies smooth scrolling behavior (likely via Tailwind CSS utility) -->
+
   <head>
+    <!-- Contains meta-information and resources about the document (not displayed on the page) -->
+
     <meta charset="UTF-8" />
+    <!-- Sets the character encoding to UTF-8, which supports most characters worldwide -->
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Ensures responsive design by setting the viewport width to the device's width and initial zoom to 1 -->
+
     <title>💬 Family Chatbot</title>
+    <!-- Sets the text shown on the browser tab or window title -->
+
   </head>
+
   <body class="bg-gray-50 dark:bg-gray-900">
+    <!-- The visible content of the webpage goes here -->
+    <!-- The class applies background colors for light and dark modes (Tailwind CSS) -->
+
     <div id="root"></div>
+    <!-- Placeholder div where the React app will mount and render all UI -->
+
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Loads the React app’s main JavaScript file as an ES module -->
+    <!-- This script initializes the React app and renders it inside the 'root' div -->
+
   </body>
 </html>
+

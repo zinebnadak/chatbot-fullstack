@@ -1,23 +1,57 @@
+// When you run npm install or yarn install, the package manager downloads all dependencies listed in your package.json and puts them inside node_modules.
+//The node_modules folder is what your project actually uses when running or building.
+
+
 {
   "name": "family-chatbot",
+  // The name of your project/package
+
   "version": "0.0.1",
+  // Current version of your project, following semantic versioning
+
   "private": true,
+  // Marks the project as private (prevents accidental publishing to npm)
+
   "scripts": {
     "dev": "vite",
+    // Command to start the development server using Vite (runs with `npm run dev`)
+
     "build": "vite build",
+    // Command to build/compile your app for production (runs with `npm run build`)
+
     "preview": "vite preview"
+    // Command to preview the production build locally (runs with `npm run preview`)
   },
+
   "dependencies": {
     "axios": "^1.4.0",
+    // Library for making HTTP requests
+
     "react": "^18.2.0",
+    // React library for building UI components
+
     "react-dom": "^18.2.0",
+    // React package for DOM-specific rendering
+
     "react-router-dom": "^7.9.1"
+    // Routing library for React apps to handle navigation
   },
+
   "devDependencies": {
     "@vitejs/plugin-react": "^3.1.0",
+    // Vite plugin to enable React Fast Refresh and JSX support during development
+
     "autoprefixer": "^10.4.13",
+    // PostCSS plugin to automatically add vendor prefixes to CSS rules
+
     "postcss": "^8.4.21",
+    // Tool for transforming CSS with JavaScript plugins (like TailwindCSS)
+
     "tailwindcss": "^3.3.2",
+    // Utility-first CSS framework used for styling your app
+
     "vite": "^4.3.9"
+    // Build tool that bundles and serves your app fast during development and production
   }
 }
+
