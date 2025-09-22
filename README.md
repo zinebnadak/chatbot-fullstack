@@ -1,9 +1,5 @@
-This is a chatbot with local development in progress., hosting later... 
-
-Here is how it works:
-* Frontend: React app with a clean, minimal UI featuring chat bubbles and a dark mode toggle. You type a question here, and it sends the message to the backend.
-* Backend: FastAPI + Uvicorn serving a POST /ask endpoint. It receives the question, processes it with AI (e.g., OpenAI), and sends the answer back.
-* Deployment: Backend is deployed on Render, frontend runs locally on port 5173 during development.
-* Environment: Uses .env files for API keys and secrets.
-* Status: Last time, the backend was running and returning basic chatbot replies. The frontend successfully sends POST requests and displays responses.
-* Goals: Continue improving UI/UX, add real AI integration, and fix bugs.
+A full-stack AI chatbot app using React (frontend) and FastAPI (backend). 
+Users type questions in a minimalist UI, which are sent to a Python API. 
+The backend uses OpenAI's GPT-3.5-turbo to generate responses and sends them back. 
+Features include dark mode, structured component-based UI, and environment-based API key handling. 
+Built for local development, with plans to deploy both frontend and backend in production.
