@@ -57,7 +57,7 @@ function DarkModeToggle({ darkMode, setDarkMode }) {
       className="fixed top-4 right-4 bg-gray-300 dark:bg-gray-700 p-2 rounded-full focus:outline-none"
       aria-label="Toggle dark mode"
     >
-      {darkMode ? '🌙' : '☀️'} {/* Show moon icon if dark mode, sun icon if light mode */}
+      {darkMode ? 'Dark Mode' : 'Light mode'} {/* Show moon icon if dark mode, sun icon if light mode */}
     </button>
   );
 }
@@ -160,7 +160,7 @@ export default function App() {
 
       {/* Header with title */}
       <header className="py-4 shadow-md bg-white dark:bg-gray-800 text-center text-xl font-semibold text-gray-900 dark:text-gray-100">
-        💬 Family Chatbot
+        💬 Zineb´s personal Agent
       </header>
 
       {/* Main chat messages container */}
@@ -181,7 +181,7 @@ export default function App() {
         {/* Loading / typing indicator shown while waiting for bot reply */}
         {loading && (
           <div className="flex items-center gap-2 px-4 py-2 text-gray-500 dark:text-gray-400 animate-pulse">
-            <span className="text-xl">🤖</span>
+            <span className="text-xl">🙎🏽‍♀️</span>
             <span>Bot is typing...</span>
           </div>
         )}

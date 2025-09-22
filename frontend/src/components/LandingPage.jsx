@@ -39,9 +39,9 @@ const LandingPage = () => {
       {/* A grid container that holds 3 feature cards; responsive with 1 column on small screens and 3 columns on larger screens */}
       <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl w-full">
         {/* Each FeatureCard shows an icon and a title */}
-        <FeatureCard icon="📸" title="My Favorite Memory"  />
-        <FeatureCard icon="🍵" title="How I Take My Tea" />
-        <FeatureCard icon="📚" title="Ask Me About..." />
+        <FeatureCard icon="♥️" title=""  />
+        <FeatureCard icon="♥️" title="Ask Me About..." />
+        <FeatureCard icon="♥️" title="" />
       </div>
 
       {/* Footer */}
